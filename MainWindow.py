@@ -1,6 +1,8 @@
 from PyQt5.QtWidgets import (
-    QMainWindow, QWidget, QVBoxLayout, QGridLayout
+    QMainWindow, QWidget, QVBoxLayout, QGridLayout, QHBoxLayout, QLabel, QPushButton, QDialog, QLineEdit
 )
+from PyQt5.QtWidgets import QMessageBox
+from PyQt5.QtCore import Qt
 
 from SliderGenerator import SliderGenerator
 from SkyWidget import SkyWidget
@@ -20,6 +22,18 @@ class MainWindow(QMainWindow):
 
         self.sky_widget = SkyWidget(self)
         main_layout.addWidget(self.sky_widget, stretch=1)
+
+        # Добавляем информационное поле "Время" и кнопку "Изменить дату"
+        time_layout = QHBoxLayout()
+        main_layout.addLayout(time_layout)
+
+        current_date_text = self.sky_widget.get_current_date_text()
+        self.time_label = QLabel(f"Время: {current_date_text}")
+        self.change_date_button = QPushButton("Изменить дату")
+        self.change_date_button.clicked.connect(self.change_date)
+
+        time_layout.addWidget(self.time_label)
+        time_layout.addWidget(self.change_date_button)
 
         controls_layout = QGridLayout()
         main_layout.addLayout(controls_layout)
@@ -46,7 +60,7 @@ class MainWindow(QMainWindow):
             label_text="Долгота вида (°):",
             min_value=-180,
             max_value=180,
-            initial_value=61,  # Примерная долгота екатеринбурга
+            initial_value=61,  # Примерная долгота Екатеринбурга
             tick_interval=30,
             update_label_function=lambda value: f"{value}°",
             callback_function=self.sky_widget.set_longitude
@@ -65,7 +79,7 @@ class MainWindow(QMainWindow):
             callback_function=self.sky_widget.update_zoom
         )
 
-        # Слайдер для изменения широты вида
+        # Слайдер для наклона головы вверх/вниз
         SliderGenerator.create_slider(
             layout=controls_layout,
             row=3,
@@ -78,7 +92,7 @@ class MainWindow(QMainWindow):
             callback_function=self.sky_widget.set_head_latitude
         )
 
-        # Слайдер для изменения долготы вида
+        # Слайдер для наклона головы влево/вправо
         SliderGenerator.create_slider(
             layout=controls_layout,
             row=4,
@@ -90,3 +104,44 @@ class MainWindow(QMainWindow):
             update_label_function=lambda value: f"{value}°",
             callback_function=self.sky_widget.set_head_longitude
         )
+
+    def change_date(self):
+        current_date_text = self.time_label.text().split(": ")[1]  # Извлекаем текущую дату из лейбла
+        date_dialog = QDialog(self)
+        date_dialog.setWindowTitle("Укажите новую дату")
+        layout = QVBoxLayout()
+        date_dialog.setLayout(layout)
+
+        date_input = QLineEdit()
+        date_input.setText(current_date_text)
+        layout.addWidget(date_input)
+
+        # Добавляем кнопки
+        buttons_layout = QHBoxLayout()
+        layout.addLayout(buttons_layout)
+
+        ok_button = QPushButton("Ок")
+        cancel_button = QPushButton("Отмена")
+        buttons_layout.addWidget(ok_button)
+        buttons_layout.addWidget(cancel_button)
+
+        ok_button.clicked.connect(lambda: self.set_new_date(date_dialog, date_input.text()))
+        cancel_button.clicked.connect(date_dialog.reject)
+
+        date_dialog.exec_()
+
+    def set_new_date(self, dialog, date_text):
+        # Проверяем формат даты YYYY/MM/DD/HH/MM
+        from datetime import datetime
+
+        try:
+            new_date = datetime.strptime(date_text, "%Y/%m/%d/%H/%M")
+            # Обновляем дату в приложении
+            self.sky_widget.update_date(new_date)
+            # Обновляем информационное поле времени
+            self.time_label.setText(f"Время: {date_text}")
+
+            dialog.accept()
+        except ValueError:
+            # Неверный формат даты, показываем сообщение об ошибке
+            QMessageBox.warning(self, "Ошибка", "Неверный формат даты. Используйте YYYY/MM/DD/HH/MM.")

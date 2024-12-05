@@ -1,6 +1,5 @@
 from dbfread import DBF
 from StarDataclass import Star
-from math import pi, cos, sin
 
 class StarParser:
     @classmethod
@@ -31,3 +30,108 @@ class StarParser:
         z = sin(dec_rad)
         return x, y, z
 
+
+from math import floor
+
+
+class TimeHandler:
+    REFERENCE_JD = 2451545.0  # JD для 2000-01-01 12:00:00
+
+    @classmethod
+    def calculate_julian_date(cls, year: int, month: int, day: int, hours: int, minutes: int) -> float:
+        """
+        Вычисляет Юлианскую дату (JD) для заданного времени.
+        """
+        if month <= 2:
+            year -= 1
+            month += 12
+
+        A = floor(year / 100)
+        B = 2 - A + floor(A / 4)
+        JD = (floor(365.25 * (year + 4716)) +
+              floor(30.6001 * (month + 1)) +
+              day + B - 1524.5 +
+              (hours + minutes / 60) / 24)
+        return JD
+
+    @classmethod
+    def get_delta_from_reference(cls, year: int, month: int, day: int, hours: int, minutes: int) -> float:
+        """
+        Вычисляет разницу времени в секундах от базового момента (2000-01-01 12:00:00 TAI).
+        """
+        jd = cls.calculate_julian_date(year, month, day, hours, minutes)
+        delta_days = jd - cls.REFERENCE_JD
+        delta_seconds = delta_days * 86400  # Преобразуем дни в секунды
+        return delta_seconds
+
+
+
+from datetime import timedelta
+from math import radians, degrees, cos, sin, atan2, asin, pi
+
+
+class StarPositionUpdater:
+    SIDEREAL_DAY_SECONDS = 86164.091  # Длительность сидерического дня в секундах
+
+    @classmethod
+    def update_positions(cls, stars: list[Star], delta_time: timedelta) -> \
+    list[Star]:
+        """
+        Обновляет положения звёзд с учётом времени.
+
+        :param stars: Список объектов Star.
+        :param delta_time: Изменение времени (timedelta).
+        :return: Список обновленных объектов Star.
+        """
+        delta_seconds = delta_time.total_seconds()
+        rotation_angle = (
+                                     delta_seconds / cls.SIDEREAL_DAY_SECONDS) * 360  # Угловое смещение в градусах
+
+        updated_stars = []
+        for star in stars:
+            # Получаем текущее RA и Dec из радиус-вектора
+            x, y, z = star.get_vector()
+            ra, dec = cls._vector_to_ra_dec(x, y, z)
+
+            # Обновляем RA с учетом вращения
+            updated_ra = (degrees(ra) + rotation_angle) % 360
+            updated_ra_rad = radians(updated_ra)  # Перевод обратно в радианы
+
+            # Пересчитываем радиус-вектор из новых RA и Dec
+            updated_vector = cls._calculate_star_vector(updated_ra_rad, dec)
+            updated_stars.append(
+                Star(updated_vector, star.magnitude, star.spectral_class)
+            )
+
+        return updated_stars
+
+    @staticmethod
+    def _vector_to_ra_dec(x: float, y: float, z: float) -> tuple[float, float]:
+        """
+        Преобразует декартовы координаты в экваториальные (RA, Dec).
+
+        :param x: Координата X.
+        :param y: Координата Y.
+        :param z: Координата Z.
+        :return: (RA, Dec) в радианах.
+        """
+        ra = atan2(y, x)  # Прямое восхождение (RA) в радианах
+        if ra < 0:
+            ra += 2 * pi  # RA должно быть положительным
+        dec = asin(z)  # Склонение (Dec) в радианах
+        return ra, dec
+
+    @staticmethod
+    def _calculate_star_vector(ra: float, dec: float) -> tuple[
+        float, float, float]:
+        """
+        Преобразует экваториальные координаты (RA, Dec) обратно в декартовы.
+
+        :param ra: Прямое восхождение (радианы).
+        :param dec: Склонение (радианы).
+        :return: (x, y, z) — радиус-вектор.
+        """
+        x = cos(dec) * cos(ra)
+        y = cos(dec) * sin(ra)
+        z = sin(dec)
+        return x, y, z

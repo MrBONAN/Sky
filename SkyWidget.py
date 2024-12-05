@@ -8,6 +8,8 @@ from OpenGL.GLU import *
 
 from StarDataclass import Star
 from StarParser import StarParser
+from StarParser import StarPositionUpdater
+from datetime import datetime
 
 
 class SkyWidget(QGLWidget):
@@ -41,18 +43,20 @@ class SkyWidget(QGLWidget):
         self._last_mouse_pos = None
         self._rotation_sensitivity = 0.057
 
+        # Инициализируем дату
+        self._date = datetime(2000, 1, 1, 12, 0)
+
         # Загрузка звезд из базы данных
         stars = StarParser.read_database()
-        self._stars_by_groups = self._separate_stars_by_groups(stars, list(range(1, 20, 2)))
+        self._stars = stars  # Оригинальные позиции звезд
+
+        # Обновляем позиции звезд в соответствии с текущей датой
+        self.update_date(self._date)
 
         r = 1.0
         latitudes = 15
         longitudes = 25
-        self._sphere_grid = self._generate_sphere_grid(r, latitudes, longitudes)
-        self._ground_vertices = self._generate_ground_vertices(r, longitudes)
-
-        self.set_latitude(57)
-        self.set_longitude(61)
+        self.sphere_grid = self.generate_sphere_grid(r, latitudes, longitudes)
 
     def initializeGL(self) -> None:
         glEnable(GL_DEPTH_TEST)
@@ -75,28 +79,24 @@ class SkyWidget(QGLWidget):
         # Отсчитываем от экватора
         glRotatef(-90, 0, 1, 0)
 
-        # Наклоняем голову наблюдателя ввверх/внизу. 90 вычитаю, чтобы он изначально смотрел вперёд, а не вверх
-        glRotatef(self._head_latitude - 90, 0, 0, 1)
+        # Наклоняем голову наблюдателя вверх/вниз
+        glRotatef(-90, 0, 0, 1)  # смотрим сначала "вдаль"
+        glRotatef(self._head_latitude, 0, 0, 1)
         # Наклоняем голову наблюдателя влево/вправо
         glRotatef(self._head_longitude, 1, 0, 0)
-        # Рисуем землю
-        glRotatef(90, 0, 0, 1)
-        self._draw_ground()
-        glRotatef(-90, 0, 0, 1)
+
         # Устанавливаем наблюдателя на нужные координаты
         glRotatef(-self._latitude, 0.0, 1.0, 0.0)  # Вращение вокруг X оси (широта)
         glRotatef(-self._longitude, 0.0, 0.0, 1.0)  # Вращение вокруг Y оси (долгота)
 
         # Рисуем меридианы и параллели
-        self._draw_grid()
+        self.draw_grid()
 
         # Рисуем звезды
         self._draw_stars(self._stars_by_groups)
-        glLoadIdentity()
-
 
     @classmethod
-    def _generate_sphere_grid(cls, r: float, latitudes: int, longitudes: int) -> list[list[tuple[float, float, float]]]:
+    def generate_sphere_grid(cls, r: float, latitudes: int, longitudes: int) -> list[list[tuple[float, float, float]]]:
         # Первая координата - широта, потом долгота
         sphere = [[None] * longitudes for _ in range(1, latitudes)]
         for longitude in range(longitudes):
@@ -109,8 +109,8 @@ class SkyWidget(QGLWidget):
                 sphere[latitude - 1][longitude] = (x, y, z)
         return sphere
 
-    def _draw_grid(self) -> None:
-        sphere_grid = self._sphere_grid
+    def draw_grid(self) -> None:
+        sphere_grid = self.sphere_grid
         glColor3f(0.2, 0.5, 0.8)
 
         # Рисуем меридианы
@@ -127,30 +127,15 @@ class SkyWidget(QGLWidget):
                 glVertex3f(*latitude[longitude])
             glEnd()
 
-    def _draw_stars(self, stars_by_grups: dict[int, list[Star]]) -> None:
+    def _draw_stars(self, stars_by_groups: dict[int, list[Star]]) -> None:
         glColor3f(1.0, 1.0, 1.0)
 
-        for size, stars in stars_by_grups.items():
-            glPointSize((size/5)**1.4)
+        for size, stars in stars_by_groups.items():
+            glPointSize((size / 5) ** 1.4)
             glBegin(GL_POINTS)
             for star in stars:
                 glVertex3f(*star.get_vector())
             glEnd()
-        pass
-
-    def _draw_ground(self):
-        glColor3f(0.11, 0.65, 0.14)
-        glBegin(GL_TRIANGLE_FAN)
-        for point in self._ground_vertices:
-            glVertex3f(*point)
-        glEnd()
-
-    def _generate_ground_vertices(self, r: float, sides_count: int):
-        vertices = [(0, -0.5, 0)]
-        angle = 2 * math.pi / sides_count
-        for i in range(sides_count + 1):
-            vertices.append((r * math.cos(i * angle), 0, r * math.sin(i * angle)))
-        return vertices
 
     def _separate_stars_by_groups(self, stars: list[Star], sizes_range: list[int]) -> dict[int, list[Star]]:
         min_magnitude = min(star.magnitude for star in stars)
@@ -163,7 +148,6 @@ class SkyWidget(QGLWidget):
             size = sizes_range[int(min(size, max_pixel_size - 1))]
             stars_by_size[size].append(star)
         return stars_by_size
-
 
     def _calculate_star_size(self, star: Star, min_magnitude: float, max_magnitude: float,
                              min_pixel_size: int, max_pixel_size: int) -> float:
@@ -233,3 +217,17 @@ class SkyWidget(QGLWidget):
     def mouseReleaseEvent(self, event: QMouseEvent) -> None:
         if event.button() == Qt.LeftButton:
             self._last_mouse_pos = None
+
+    def update_date(self, new_date):
+        self._date = new_date
+        # Вычисляем разницу во времени от базовой даты
+        base_date = datetime(2000, 1, 1, 12, 0)
+        delta_time = new_date - base_date
+
+        # Обновляем позиции звезд
+        self._updated_stars = StarPositionUpdater.update_positions(self._stars, delta_time)
+        self._stars_by_groups = self._separate_stars_by_groups(self._updated_stars, list(range(1, 20, 2)))
+        self.update()
+
+    def get_current_date_text(self):
+        return self._date.strftime("%Y/%m/%d/%H/%M")
