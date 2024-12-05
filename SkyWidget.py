@@ -43,7 +43,7 @@ class SkyWidget(QGLWidget):
 
         # Загрузка звезд из базы данных
         stars = StarParser.read_database()
-        self._stars_by_groups = self._separate_stars_by_groups(stars, list(range(1, 20, 2)))
+        self._stars_by_groups = self._separate_stars_by_groups(stars, list(range(1, 10)))
 
         r = 1.0
         latitudes = 15
@@ -131,7 +131,8 @@ class SkyWidget(QGLWidget):
         glColor3f(1.0, 1.0, 1.0)
 
         for size, stars in stars_by_grups.items():
-            glPointSize((size/5)**1.4)
+            scaled_size = (size/10)**-1
+            glPointSize(scaled_size)
             glBegin(GL_POINTS)
             for star in stars:
                 glVertex3f(*star.get_vector())
@@ -153,15 +154,13 @@ class SkyWidget(QGLWidget):
         return vertices
 
     def _separate_stars_by_groups(self, stars: list[Star], sizes_range: list[int]) -> dict[int, list[Star]]:
-        min_magnitude = min(star.magnitude for star in stars)
-        max_magnitude = max(star.magnitude for star in stars)
-        min_pixel_size = 0
-        max_pixel_size = len(sizes_range)
         stars_by_size = {size: [] for size in sizes_range}
-        for star in stars:
-            size = self._calculate_star_size(star, min_magnitude, max_magnitude, min_pixel_size, max_pixel_size)
-            size = sizes_range[int(min(size, max_pixel_size - 1))]
-            stars_by_size[size].append(star)
+        stars = sorted(stars, key=lambda star: star.magnitude)
+        group_len = int(len(stars) / len(sizes_range))
+        for i, star in enumerate(stars):
+            if i // group_len >= len(sizes_range):
+                break
+            stars_by_size[sizes_range[i // group_len]].append(star)
         return stars_by_size
 
 
