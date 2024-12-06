@@ -1,3 +1,5 @@
+# MainWindow.py
+
 from PyQt5.QtWidgets import (
     QMainWindow, QWidget, QVBoxLayout, QGridLayout, QHBoxLayout, QLabel, QPushButton, QDialog, QLineEdit
 )
@@ -39,6 +41,10 @@ class MainWindow(QMainWindow):
         main_layout.addLayout(controls_layout)
         self.add_sliders(controls_layout)
 
+        # Подключаем сигналы из SkyWidget к слотам для обновления ползунков
+        self.sky_widget.headLatitudeChanged.connect(self.update_head_latitude_slider)
+        self.sky_widget.headLongitudeChanged.connect(self.update_head_longitude_slider)
+
     def add_sliders(self, controls_layout: QGridLayout) -> None:
         # Слайдер для изменения широты вида
         SliderGenerator.create_slider(
@@ -75,12 +81,12 @@ class MainWindow(QMainWindow):
             max_value=90,
             initial_value=45,
             tick_interval=5,
-            update_label_function=lambda value: f"{value}°",
+            update_label_function=lambda value: f"{value}%",
             callback_function=self.sky_widget.update_zoom
         )
 
         # Слайдер для наклона головы вверх/вниз
-        SliderGenerator.create_slider(
+        _, self.head_latitude_slider, _ = SliderGenerator.create_slider(
             layout=controls_layout,
             row=3,
             label_text="Наклон головы вверх/вниз (°):",
@@ -93,7 +99,7 @@ class MainWindow(QMainWindow):
         )
 
         # Слайдер для наклона головы влево/вправо
-        SliderGenerator.create_slider(
+        _, self.head_longitude_slider, _ = SliderGenerator.create_slider(
             layout=controls_layout,
             row=4,
             label_text="Наклон головы влево/вправо (°):",
@@ -104,6 +110,18 @@ class MainWindow(QMainWindow):
             update_label_function=lambda value: f"{value}°",
             callback_function=self.sky_widget.set_head_longitude
         )
+
+    def update_head_latitude_slider(self, value):
+        # Блокируем сигналы, чтобы избежать рекурсии
+        self.head_latitude_slider.blockSignals(True)
+        self.head_latitude_slider.setValue(int(value))
+        self.head_latitude_slider.blockSignals(False)
+
+    def update_head_longitude_slider(self, value):
+        # Блокируем сигналы, чтобы избежать рекурсии
+        self.head_longitude_slider.blockSignals(True)
+        self.head_longitude_slider.setValue(int(value))
+        self.head_longitude_slider.blockSignals(False)
 
     def change_date(self):
         current_date_text = self.time_label.text().split(": ")[1]  # Извлекаем текущую дату из лейбла
