@@ -134,9 +134,21 @@ class SkyWidget(QGLWidget):
 
     def _draw_stars(self, stars_by_groups: dict[int, list[Star]]) -> None:
         glColor3f(1.0, 1.0, 1.0)
+
+        # Определяем диапазон размеров
+        min_size = 1.0
+        max_size = 6.5
+        num_groups = len(stars_by_groups)
+
         for size, stars in stars_by_groups.items():
-            # scale как во втором коде: (size/10)**-1 = 10/size
-            scaled_size = (size / 10)**(-1)
+            # Инвертируем size: 1 -> num_groups, 2 -> num_groups -1, ..., num_groups -> 1
+            inverted_size = num_groups - size + 1
+
+            # Нелинейная шкала для расчёта размера
+            # Можно экспериментировать с экспоненциальной или другой функцией
+            scaled_size = min_size + (max_size - min_size) * (
+                        inverted_size / num_groups) ** 5
+
             glPointSize(scaled_size)
             glBegin(GL_POINTS)
             for star in stars:
