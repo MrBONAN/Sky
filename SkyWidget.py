@@ -1,10 +1,8 @@
-# SkyWidget.py
-
 import math
 from datetime import datetime
 
 from PyQt5.QtGui import QMouseEvent
-from PyQt5.QtCore import Qt, pyqtSignal  # Импортируем pyqtSignal
+from PyQt5.QtCore import Qt, pyqtSignal
 from PyQt5.QtOpenGL import QGLWidget
 from OpenGL.GL import *
 from OpenGL.GLU import *
@@ -15,7 +13,7 @@ from StarParser import StarPositionUpdater
 
 
 class SkyWidget(QGLWidget):
-    # Добавляем сигналы для изменения углов наклона головы
+    # Сигналы остаются, если были необходимы
     headLatitudeChanged = pyqtSignal(float)
     headLongitudeChanged = pyqtSignal(float)
 
@@ -59,10 +57,14 @@ class SkyWidget(QGLWidget):
         # Обновляем позиции звёзд в соответствии с текущей датой
         self.update_date(self._date)
 
+        # Генерируем сетку сферы
         r = 1.0
         latitudes = 15
         longitudes = 25
         self.sphere_grid = self.generate_sphere_grid(r, latitudes, longitudes)
+
+        # Генерируем вершины для земли
+        self._ground_vertices = self._generate_ground_vertices(r, longitudes)
 
     def initializeGL(self) -> None:
         glEnable(GL_DEPTH_TEST)
@@ -85,20 +87,24 @@ class SkyWidget(QGLWidget):
         # Отсчитываем от экватора
         glRotatef(-90, 0, 1, 0)
 
-        # Наклоняем голову наблюдателя вверх/вниз
-        glRotatef(-90, 0, 0, 1)  # смотрим сначала "вдаль"
-        glRotatef(self._head_latitude, 0, 0, 1)
-        # Наклоняем голову наблюдателя влево/вправо
+        # Наклоняем голову наблюдателя вверх/вниз. 90 вычитаем, чтобы он изначально смотрел вперёд, а не вверх
+        glRotatef(self._head_latitude - 90, 0, 0, 1)
+        # Наклоняем голову влево/вправо
         glRotatef(self._head_longitude, 1, 0, 0)
 
-        # Устанавливаем наблюдателя на нужные координаты
+        # Рисуем землю
+        glRotatef(90, 0, 0, 1)
+        self._draw_ground()
+        glRotatef(-90, 0, 0, 1)
+
+        # Устанавливаем наблюдателя на нужные координаты (широта, долгота)
         glRotatef(-self._latitude, 0.0, 1.0, 0.0)  # Вращение по широте
         glRotatef(-self._longitude, 0.0, 0.0, 1.0)  # Вращение по долготе
 
         # Рисуем меридианы и параллели
         self.draw_grid()
 
-        # Рисуем звезды
+        # Рисуем звёзды
         self._draw_stars(self._stars_by_groups)
 
     @classmethod
@@ -134,26 +140,28 @@ class SkyWidget(QGLWidget):
 
     def _draw_stars(self, stars_by_groups: dict[int, list[Star]]) -> None:
         glColor3f(1.0, 1.0, 1.0)
-
-        # Определяем диапазон размеров
-        min_size = 1.0
-        max_size = 6.5
-        num_groups = len(stars_by_groups)
-
+        # Логика скейла звёзд, как была в вашем коде
         for size, stars in stars_by_groups.items():
-            # Инвертируем size: 1 -> num_groups, 2 -> num_groups -1, ..., num_groups -> 1
-            inverted_size = num_groups - size + 1
-
-            # Нелинейная шкала для расчёта размера
-            # Можно экспериментировать с экспоненциальной или другой функцией
-            scaled_size = min_size + (max_size - min_size) * (
-                        inverted_size / num_groups) ** 5
-
+            scaled_size = (size / 10)**(-1)
             glPointSize(scaled_size)
             glBegin(GL_POINTS)
             for star in stars:
                 glVertex3f(*star.get_vector())
             glEnd()
+
+    def _draw_ground(self):
+        glColor3f(0.11, 0.65, 0.14)
+        glBegin(GL_TRIANGLE_FAN)
+        for point in self._ground_vertices:
+            glVertex3f(*point)
+        glEnd()
+
+    def _generate_ground_vertices(self, r: float, sides_count: int):
+        vertices = [(0, -0.5, 0)]
+        angle = 2 * math.pi / sides_count
+        for i in range(sides_count + 1):
+            vertices.append((r * math.cos(i * angle), 0, r * math.sin(i * angle)))
+        return vertices
 
     def _separate_stars_by_groups(self, stars: list[Star], sizes_range: list[int]) -> dict[int, list[Star]]:
         stars_by_size = {size: [] for size in sizes_range}
@@ -194,14 +202,14 @@ class SkyWidget(QGLWidget):
     def set_head_latitude(self, value: float) -> None:
         value = max(min(self._head_latitude_max, value), self._head_latitude_min)
         self._head_latitude = value
-        self.headLatitudeChanged.emit(self._head_latitude)  # Эмитируем сигнал
+        self.headLatitudeChanged.emit(self._head_latitude)
         self.update()
 
     def set_head_longitude(self, value: float) -> None:
         value = (value - self._head_longitude_min) % (
                 self._head_longitude_max - self._head_longitude_min) + self._head_longitude_min
         self._head_longitude = value
-        self.headLongitudeChanged.emit(self._head_longitude)  # Эмитируем сигнал
+        self.headLongitudeChanged.emit(self._head_longitude)
         self.update()
 
     def update_zoom(self, value: int) -> None:
