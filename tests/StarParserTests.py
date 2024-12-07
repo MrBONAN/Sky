@@ -8,11 +8,11 @@ class StarParserTests(unittest.TestCase):
         stars = StarParser.read_database(self.database_path)
         self.assertEqual(3581, len(stars))
         for star in stars:
-            vec = star.get_vector()
-            norm = (vec[0]**2 + vec[1]**2 + vec[2]**2)**0.5
+            x,y,z = star.get_vector().extract_coords()
+            norm = (x**2 + y**2 + z**2)**0.5
             self.assertAlmostEqual(1, norm,
                                    msg=f"Звезда находится не на единичной окружности: "
-                                                f"({vec[0]}, {vec[1]}, {vec[2]}),длина вектора: {norm}",
+                                                f"({x}, {y}, {z}),длина вектора: {norm}",
                                    delta=0.01)
 
 

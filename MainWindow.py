@@ -6,12 +6,12 @@ from PyQt5.QtCore import Qt
 
 from SliderGenerator import SliderGenerator
 from SkyWidget import SkyWidget
-
+from datetime import datetime
 
 class MainWindow(QMainWindow):
     def __init__(self):
         super(MainWindow, self).__init__()
-        self.setWindowTitle("ляляля")
+        self.setWindowTitle("Звездное Небо")
         self.setGeometry(100, 100, 1200, 900)
 
         central_widget = QWidget()
@@ -137,7 +137,6 @@ class MainWindow(QMainWindow):
         date_dialog.exec_()
 
     def set_new_date(self, dialog, date_text):
-        from datetime import datetime
 
         try:
             new_date = datetime.strptime(date_text, "%Y/%m/%d/%H/%M")

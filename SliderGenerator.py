@@ -40,3 +40,5 @@ class SliderGenerator:
         layout.addWidget(value_label, row, 2)
 
         return label, slider, value_label
+
+

@@ -139,24 +139,25 @@ class SkyWidget(QGLWidget):
         glColor3f(1.0, 1.0, 1.0)
 
         min_size = 1.0
-        max_size = 6.5
-        num_groups = len(stars_by_groups)
+        max_size = 5.5
+        num_groups = 10
 
         for size, stars in stars_by_groups.items():
             inverted_size = num_groups - size + 1
 
             scaled_size = min_size + (max_size - min_size) * (
-                        inverted_size / num_groups) ** 6.5
+                        inverted_size / num_groups) ** 8.5
 
             glPointSize(scaled_size)
             glBegin(GL_POINTS)
             for star in stars:
-                glVertex3f(*star.get_vector())
+                x,y,z = star.get_vector().extract_coords()
+                glVertex3f(x,y,z)
             glEnd()
 
     def _separate_stars_by_groups(self, stars: list[Star], sizes_range: list[int]) -> dict[int, list[Star]]:
         stars_by_size = {size: [] for size in sizes_range}
-        stars = sorted(stars, key=lambda star: star.magnitude)
+        stars = sorted(stars, key=lambda star: star.get_magnitude())
         group_len = max(1, int(len(stars) / len(sizes_range)))
         for i, star in enumerate(stars):
             index = i // group_len

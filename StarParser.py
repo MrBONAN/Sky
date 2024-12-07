@@ -1,5 +1,6 @@
 from dbfread import DBF
-from StarDataclass import Star
+from StarDataclass import Star,Vector
+
 
 class StarParser:
     @classmethod
@@ -15,7 +16,7 @@ class StarParser:
         return stars
 
     @classmethod
-    def _calculate_star_vector(cls, right_ascension:str, declination:str) -> tuple[float, float, float]:
+    def _calculate_star_vector(cls, right_ascension:str, declination:str) -> 'Vector':
         ra_hours, ra_minutes, ra_seconds = map(float, right_ascension.split(":"))
         right_ascension_angle = ra_hours * 15 + ra_minutes / 4 + ra_seconds / (4 * 60)
         dec_hours, dec_minutes, dec_seconds = map(float, declination.split(":"))
@@ -28,41 +29,41 @@ class StarParser:
         x = cos(dec_rad) * cos(ra_rad)
         y = cos(dec_rad) * sin(ra_rad)
         z = sin(dec_rad)
-        return x, y, z
+        return Vector(x, y, z)
 
 
-from math import floor
-
-
-class TimeHandler:
-    REFERENCE_JD = 2451545.0  # JD для 2000-01-01 12:00:00
-
-    @classmethod
-    def calculate_julian_date(cls, year: int, month: int, day: int, hours: int, minutes: int) -> float:
-        """
-        Вычисляет Юлианскую дату (JD) для заданного времени.
-        """
-        if month <= 2:
-            year -= 1
-            month += 12
-
-        A = floor(year / 100)
-        B = 2 - A + floor(A / 4)
-        JD = (floor(365.25 * (year + 4716)) +
-              floor(30.6001 * (month + 1)) +
-              day + B - 1524.5 +
-              (hours + minutes / 60) / 24)
-        return JD
-
-    @classmethod
-    def get_delta_from_reference(cls, year: int, month: int, day: int, hours: int, minutes: int) -> float:
-        """
-        Вычисляет разницу времени в секундах от базового момента (2000-01-01 12:00:00 TAI).
-        """
-        jd = cls.calculate_julian_date(year, month, day, hours, minutes)
-        delta_days = jd - cls.REFERENCE_JD
-        delta_seconds = delta_days * 86400
-        return delta_seconds
+# from math import floor
+#
+#
+# class TimeHandler:
+#     REFERENCE_JD = 2451545.0  # JD для 2000-01-01 12:00:00
+#
+#     # @classmethod
+#     # def calculate_julian_date(cls, year: int, month: int, day: int, hours: int, minutes: int) -> float:
+#     #     """
+#     #     Вычисляет Юлианскую дату (JD) для заданного времени.
+#     #     """
+#     #     if month <= 2:
+#     #         year -= 1
+#     #         month += 12
+#     #
+#     #     A = floor(year / 100)
+#     #     B = 2 - A + floor(A / 4)
+#     #     JD = (floor(365.25 * (year + 4716)) +
+#     #           floor(30.6001 * (month + 1)) +
+#     #           day + B - 1524.5 +
+#     #           (hours + minutes / 60) / 24)
+#     #     return JD
+#
+#     # @classmethod
+#     # def get_delta_from_reference(cls, year: int, month: int, day: int, hours: int, minutes: int) -> float:
+#     #     """
+#     #     Вычисляет разницу времени в секундах от базового момента (2000-01-01 12:00:00 TAI).
+#     #     """
+#     #     jd = cls.calculate_julian_date(year, month, day, hours, minutes)
+#     #     delta_days = jd - cls.REFERENCE_JD
+#     #     delta_seconds = delta_days * 86400
+#     #     return delta_seconds
 
 
 
@@ -89,7 +90,7 @@ class StarPositionUpdater:
 
         updated_stars = []
         for star in stars:
-            x, y, z = star.get_vector()
+            x, y, z = star.get_vector().extract_coords()
             ra, dec = cls._vector_to_ra_dec(x, y, z)
 
             updated_ra = (degrees(ra) + rotation_angle) % 360
@@ -97,7 +98,7 @@ class StarPositionUpdater:
 
             updated_vector = cls._calculate_star_vector(updated_ra_rad, dec)
             updated_stars.append(
-                Star(updated_vector, star.magnitude, star.spectral_class)
+                Star(updated_vector, star.get_magnitude(), star.get_spectral_class())
             )
 
         return updated_stars
@@ -114,12 +115,12 @@ class StarPositionUpdater:
         return ra, dec
 
     @staticmethod
-    def _calculate_star_vector(ra: float, dec: float) -> tuple[
-        float, float, float]:
+    def _calculate_star_vector(ra: float, dec: float) -> Vector:
         """
         Преобразует экваториальные координаты (RA, Dec) обратно в декартовы.
         """
         x = cos(dec) * cos(ra)
         y = cos(dec) * sin(ra)
         z = sin(dec)
-        return x, y, z
+        return Vector(x, y, z)
+
