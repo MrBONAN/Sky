@@ -1,10 +1,8 @@
-# SkyWidget.py
-
 import math
 from datetime import datetime
 
 from PyQt5.QtGui import QMouseEvent
-from PyQt5.QtCore import Qt, pyqtSignal  # Импортируем pyqtSignal
+from PyQt5.QtCore import Qt, pyqtSignal
 from PyQt5.QtOpenGL import QGLWidget
 from OpenGL.GL import *
 from OpenGL.GLU import *
@@ -15,28 +13,24 @@ from StarParser import StarPositionUpdater
 
 
 class SkyWidget(QGLWidget):
-    # Добавляем сигналы для изменения углов наклона головы
     headLatitudeChanged = pyqtSignal(float)
     headLongitudeChanged = pyqtSignal(float)
 
     def __init__(self, parent=None):
         super(SkyWidget, self).__init__(parent)
 
-        # Углы поворота неба
-        self._latitude: float = 0.0
+        self._latitude: float = 57.0
         self._latitude_max: int = 90
         self._latitude_min: int = -90
 
-        self._longitude: float = 0.0
+        self._longitude: float = 61.0
         self._longitude_max: int = 180
         self._longitude_min: int = -180
 
-        # Поле зрения
         self._fov: float = 45.0
         self._max_fov: int = 90
         self._min_fov: int = 10
 
-        # Углы поворота наблюдателя
         self._head_latitude: float = 0.0
         self._head_latitude_max: int = 90
         self._head_latitude_min: int = -90
@@ -45,18 +39,14 @@ class SkyWidget(QGLWidget):
         self._head_longitude_max: int = 180
         self._head_longitude_min: int = -180
 
-        # Переменные для обработки событий мыши
         self._last_mouse_pos = None
         self._rotation_sensitivity = 0.057
 
-        # Инициализируем дату
         self._date = datetime(2000, 1, 1, 12, 0)
 
-        # Загрузка звезд из базы данных
         stars = StarParser.read_database()
-        self._stars = stars  # Оригинальные позиции звёзд
+        self._stars = stars
 
-        # Обновляем позиции звёзд в соответствии с текущей датой
         self.update_date(self._date)
 
         r = 1.0
@@ -70,11 +60,11 @@ class SkyWidget(QGLWidget):
         glEnable(GL_LINE_SMOOTH)
         glEnable(GL_BLEND)
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
-        glClearColor(0.0, 0.0, 0.0, 1.0)  # Тёмный фон
+        glClearColor(0.0, 0.0, 0.0, 1.0)
         glLineWidth(1.0)
         glEnable(GL_COLOR_MATERIAL)
         glEnable(GL_POINT_SMOOTH)
-        glDisable(GL_CULL_FACE)  # Отключаем отсечение граней для видимости изнутри
+        glDisable(GL_CULL_FACE)
 
     def resizeGL(self, w: int, h: int) -> None:
         self.update_projection()
@@ -83,27 +73,22 @@ class SkyWidget(QGLWidget):
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
         glLoadIdentity()
 
-        # Отсчитываем от экватора
         glRotatef(-90, 0, 1, 0)
 
-        # Наклоняем голову наблюдателя вверх/вниз
-        glRotatef(-90, 0, 0, 1)  # смотрим сначала "вдаль"
+
+        glRotatef(-90, 0, 0, 1)
         glRotatef(self._head_latitude, 0, 0, 1)
-        # Наклоняем голову наблюдателя влево/вправо
         glRotatef(self._head_longitude, 1, 0, 0)
 
         glRotatef(90, 0, 0, 1)
         self._draw_ground()
         glRotatef(-90, 0, 0, 1)
 
-        # Устанавливаем наблюдателя на нужные координаты
-        glRotatef(-self._latitude, 0.0, 1.0, 0.0)  # Вращение по широте
-        glRotatef(-self._longitude, 0.0, 0.0, 1.0)  # Вращение по долготе
+        glRotatef(-self._latitude, 0.0, 1.0, 0.0)
+        glRotatef(-self._longitude, 0.0, 0.0, 1.0)
 
-        # Рисуем меридианы и параллели
         self.draw_grid()
 
-        # Рисуем звезды
         self._draw_stars(self._stars_by_groups)
 
     @classmethod
@@ -123,14 +108,12 @@ class SkyWidget(QGLWidget):
         sphere_grid = self.sphere_grid
         glColor3f(0.2, 0.5, 0.8)
 
-        # Рисуем меридианы
         for longitude in range(len(sphere_grid[0])):
             glBegin(GL_LINE_STRIP)
             for latitude in sphere_grid:
                 glVertex3f(*latitude[longitude])
             glEnd()
 
-        # Рисуем параллели
         for latitude in sphere_grid:
             glBegin(GL_LINE_LOOP)
             for longitude in range(len(latitude)):
@@ -155,17 +138,13 @@ class SkyWidget(QGLWidget):
     def _draw_stars(self, stars_by_groups: dict[int, list[Star]]) -> None:
         glColor3f(1.0, 1.0, 1.0)
 
-        # Определяем диапазон размеров
         min_size = 1.0
         max_size = 6.5
         num_groups = len(stars_by_groups)
 
         for size, stars in stars_by_groups.items():
-            # Инвертируем size: 1 -> num_groups, 2 -> num_groups -1, ..., num_groups -> 1
             inverted_size = num_groups - size + 1
 
-            # Нелинейная шкала для расчёта размера
-            # Можно экспериментировать с экспоненциальной или другой функцией
             scaled_size = min_size + (max_size - min_size) * (
                         inverted_size / num_groups) ** 6.5
 
@@ -188,13 +167,10 @@ class SkyWidget(QGLWidget):
 
     def update_date(self, new_date):
         self._date = new_date
-        # Вычисляем разницу во времени от базовой даты
         base_date = datetime(2000, 1, 1, 12, 0)
         delta_time = new_date - base_date
 
-        # Обновляем позиции звезд
         self._updated_stars = StarPositionUpdater.update_positions(self._stars, delta_time)
-        # Группируем звёзды
         self._stars_by_groups = self._separate_stars_by_groups(self._updated_stars, list(range(1, 10)))
         self.update()
 
@@ -214,14 +190,14 @@ class SkyWidget(QGLWidget):
     def set_head_latitude(self, value: float) -> None:
         value = max(min(self._head_latitude_max, value), self._head_latitude_min)
         self._head_latitude = value
-        self.headLatitudeChanged.emit(self._head_latitude)  # Эмитируем сигнал
+        self.headLatitudeChanged.emit(self._head_latitude)
         self.update()
 
     def set_head_longitude(self, value: float) -> None:
         value = (value - self._head_longitude_min) % (
                 self._head_longitude_max - self._head_longitude_min) + self._head_longitude_min
         self._head_longitude = value
-        self.headLongitudeChanged.emit(self._head_longitude)  # Эмитируем сигнал
+        self.headLongitudeChanged.emit(self._head_longitude)
         self.update()
 
     def update_zoom(self, value: int) -> None:
@@ -239,7 +215,6 @@ class SkyWidget(QGLWidget):
         glMatrixMode(GL_MODELVIEW)
         glLoadIdentity()
 
-    # Методы для обработки событий мыши
     def mousePressEvent(self, event: QMouseEvent) -> None:
         if event.button() == Qt.LeftButton:
             self._last_mouse_pos = event.pos()
@@ -251,7 +226,6 @@ class SkyWidget(QGLWidget):
         delta_x = event.x() - self._last_mouse_pos.x()
         delta_y = event.y() - self._last_mouse_pos.y()
 
-        # Обновляем углы головы наблюдателя
         longitude_delta = delta_x * self._rotation_sensitivity
         latitude_delta = delta_y * self._rotation_sensitivity
 

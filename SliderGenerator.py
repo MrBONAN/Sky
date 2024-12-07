@@ -1,5 +1,3 @@
-# SliderGenerator.py
-
 from PyQt5.QtWidgets import QLabel, QSlider, QGridLayout
 from PyQt5.QtCore import Qt
 from typing import Callable

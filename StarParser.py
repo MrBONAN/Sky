@@ -61,7 +61,7 @@ class TimeHandler:
         """
         jd = cls.calculate_julian_date(year, month, day, hours, minutes)
         delta_days = jd - cls.REFERENCE_JD
-        delta_seconds = delta_days * 86400  # Преобразуем дни в секунды
+        delta_seconds = delta_days * 86400
         return delta_seconds
 
 
@@ -71,7 +71,7 @@ from math import radians, degrees, cos, sin, atan2, asin, pi
 
 
 class StarPositionUpdater:
-    SIDEREAL_DAY_SECONDS = 86164.091  # Длительность сидерического дня в секундах
+    SIDEREAL_DAY_SECONDS = 86164.091
 
     @classmethod
     def update_positions(cls, stars: list[Star], delta_time: timedelta) -> \
@@ -89,15 +89,12 @@ class StarPositionUpdater:
 
         updated_stars = []
         for star in stars:
-            # Получаем текущее RA и Dec из радиус-вектора
             x, y, z = star.get_vector()
             ra, dec = cls._vector_to_ra_dec(x, y, z)
 
-            # Обновляем RA с учетом вращения
             updated_ra = (degrees(ra) + rotation_angle) % 360
-            updated_ra_rad = radians(updated_ra)  # Перевод обратно в радианы
+            updated_ra_rad = radians(updated_ra)
 
-            # Пересчитываем радиус-вектор из новых RA и Dec
             updated_vector = cls._calculate_star_vector(updated_ra_rad, dec)
             updated_stars.append(
                 Star(updated_vector, star.magnitude, star.spectral_class)
@@ -109,16 +106,11 @@ class StarPositionUpdater:
     def _vector_to_ra_dec(x: float, y: float, z: float) -> tuple[float, float]:
         """
         Преобразует декартовы координаты в экваториальные (RA, Dec).
-
-        :param x: Координата X.
-        :param y: Координата Y.
-        :param z: Координата Z.
-        :return: (RA, Dec) в радианах.
         """
-        ra = atan2(y, x)  # Прямое восхождение (RA) в радианах
+        ra = atan2(y, x)  # Прямое восхождение
         if ra < 0:
-            ra += 2 * pi  # RA должно быть положительным
-        dec = asin(z)  # Склонение (Dec) в радианах
+            ra += 2 * pi  # нормировка до полож
+        dec = asin(z)  # Склонение
         return ra, dec
 
     @staticmethod
@@ -126,10 +118,6 @@ class StarPositionUpdater:
         float, float, float]:
         """
         Преобразует экваториальные координаты (RA, Dec) обратно в декартовы.
-
-        :param ra: Прямое восхождение (радианы).
-        :param dec: Склонение (радианы).
-        :return: (x, y, z) — радиус-вектор.
         """
         x = cos(dec) * cos(ra)
         y = cos(dec) * sin(ra)

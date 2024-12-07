@@ -11,29 +11,23 @@ class DateChangeDialog(QDialog):
 
         self.current_time = current_time
 
-        # Основной вертикальный макет
         main_layout = QVBoxLayout()
         self.setLayout(main_layout)
 
-        # Информационное сообщение
         info_label = QLabel("Введите новую дату в формате YYYY/MM/DD/HH/MM:")
         main_layout.addWidget(info_label)
 
-        # Поле ввода даты
         self.time_input = QLineEdit()
         self.time_input.setText(self.current_time)
         main_layout.addWidget(self.time_input)
 
-        # Горизонтальный макет для кнопок
         buttons_layout = QHBoxLayout()
         main_layout.addLayout(buttons_layout)
 
-        # Кнопка "ОК"
         ok_button = QPushButton("ОК")
         ok_button.clicked.connect(self.accept)
         buttons_layout.addWidget(ok_button)
 
-        # Кнопка "Отмена"
         cancel_button = QPushButton("Отмена")
         cancel_button.clicked.connect(self.reject)
         buttons_layout.addWidget(cancel_button)
