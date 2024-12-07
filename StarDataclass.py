@@ -1,6 +1,5 @@
 from dataclasses import dataclass
 from math import asin, atan2
-from typing import NamedTuple
 
 
 @dataclass

@@ -1,6 +1,7 @@
 from dbfread import DBF
 from StarDataclass import Star,Vector
-
+from datetime import timedelta
+from math import radians, degrees, cos, sin, atan2, asin, pi
 
 class StarParser:
     @classmethod
@@ -30,45 +31,6 @@ class StarParser:
         y = cos(dec_rad) * sin(ra_rad)
         z = sin(dec_rad)
         return Vector(x, y, z)
-
-
-# from math import floor
-#
-#
-# class TimeHandler:
-#     REFERENCE_JD = 2451545.0  # JD для 2000-01-01 12:00:00
-#
-#     # @classmethod
-#     # def calculate_julian_date(cls, year: int, month: int, day: int, hours: int, minutes: int) -> float:
-#     #     """
-#     #     Вычисляет Юлианскую дату (JD) для заданного времени.
-#     #     """
-#     #     if month <= 2:
-#     #         year -= 1
-#     #         month += 12
-#     #
-#     #     A = floor(year / 100)
-#     #     B = 2 - A + floor(A / 4)
-#     #     JD = (floor(365.25 * (year + 4716)) +
-#     #           floor(30.6001 * (month + 1)) +
-#     #           day + B - 1524.5 +
-#     #           (hours + minutes / 60) / 24)
-#     #     return JD
-#
-#     # @classmethod
-#     # def get_delta_from_reference(cls, year: int, month: int, day: int, hours: int, minutes: int) -> float:
-#     #     """
-#     #     Вычисляет разницу времени в секундах от базового момента (2000-01-01 12:00:00 TAI).
-#     #     """
-#     #     jd = cls.calculate_julian_date(year, month, day, hours, minutes)
-#     #     delta_days = jd - cls.REFERENCE_JD
-#     #     delta_seconds = delta_days * 86400
-#     #     return delta_seconds
-
-
-
-from datetime import timedelta
-from math import radians, degrees, cos, sin, atan2, asin, pi
 
 
 class StarPositionUpdater:

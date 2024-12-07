@@ -2,7 +2,6 @@ from PyQt5.QtWidgets import (
     QMainWindow, QWidget, QVBoxLayout, QGridLayout, QHBoxLayout, QLabel, QPushButton, QDialog, QLineEdit
 )
 from PyQt5.QtWidgets import QMessageBox
-from PyQt5.QtCore import Qt
 
 from SliderGenerator import SliderGenerator
 from SkyWidget import SkyWidget
