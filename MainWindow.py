@@ -1,13 +1,38 @@
 from PyQt5.QtWidgets import (
-    QMainWindow, QWidget, QVBoxLayout, QGridLayout, QHBoxLayout, QLabel, QPushButton, QDialog, QLineEdit
+    QMainWindow, QWidget, QVBoxLayout, QGridLayout, QHBoxLayout, QLabel,
+    QPushButton, QMessageBox, QDialog
 )
-from PyQt5.QtWidgets import QMessageBox
 
 from SliderGenerator import SliderGenerator
+from SliderConfig import SliderConfig
 from SkyWidget import SkyWidget
+from DateChangeDialog import DateChangeDialog
+from settings import (
+    INITIAL_LATITUDE, INITIAL_LONGITUDE, INITIAL_FOV,
+    LATITUDE_RANGE, LONGITUDE_RANGE, FOV_RANGE,
+    INITIAL_HEAD_LATITUDE, INITIAL_HEAD_LONGITUDE,
+    HEAD_LATITUDE_RANGE, HEAD_LONGITUDE_RANGE,
+    DATE_FORMAT
+)
 from datetime import datetime
 
+
+class AngleConfig:
+    """
+    Конфигурация для угловых параметров.
+    """
+
+    def __init__(self, value: float, min_value: float, max_value: float):
+        self.value = value
+        self.min_value = min_value
+        self.max_value = max_value
+
+
 class MainWindow(QMainWindow):
+    """
+    Главное окно приложения "Звездное Небо".
+    """
+
     def __init__(self):
         super(MainWindow, self).__init__()
         self.setWindowTitle("Звездное Небо")
@@ -37,111 +62,124 @@ class MainWindow(QMainWindow):
         main_layout.addLayout(controls_layout)
         self.add_sliders(controls_layout)
 
-        self.sky_widget.headLatitudeChanged.connect(self.update_head_latitude_slider)
-        self.sky_widget.headLongitudeChanged.connect(self.update_head_longitude_slider)
+        self.sky_widget.headLatitudeChanged.connect(
+            self.update_head_latitude_slider)
+        self.sky_widget.headLongitudeChanged.connect(
+            self.update_head_longitude_slider)
 
     def add_sliders(self, controls_layout: QGridLayout) -> None:
-        SliderGenerator.create_slider(
-            layout=controls_layout,
+        """
+        Добавляет слайдеры в интерфейс.
+
+        :param controls_layout: Сетка для размещения слайдеров.
+        """
+        slider_config_latitude = SliderConfig(
             row=0,
             label_text="Широта вида (°):",
-            min_value=-90,
-            max_value=90,
-            initial_value=57,  # примерная широта Екатеринбурга
+            min_value=LATITUDE_RANGE[0],
+            max_value=LATITUDE_RANGE[1],
+            initial_value=INITIAL_LATITUDE,
             tick_interval=30,
             update_label_function=lambda value: f"{value}°",
             callback_function=self.sky_widget.set_latitude
         )
+        SliderGenerator.create_slider(layout=controls_layout,
+                                      config=slider_config_latitude)
 
-        SliderGenerator.create_slider(
-            layout=controls_layout,
+        slider_config_longitude = SliderConfig(
             row=1,
             label_text="Долгота вида (°):",
-            min_value=-180,
-            max_value=180,
-            initial_value=61,  # Примерная долгота Екатеринбурга
+            min_value=LONGITUDE_RANGE[0],
+            max_value=LONGITUDE_RANGE[1],
+            initial_value=INITIAL_LONGITUDE,
             tick_interval=30,
             update_label_function=lambda value: f"{value}°",
             callback_function=self.sky_widget.set_longitude
         )
+        SliderGenerator.create_slider(layout=controls_layout,
+                                      config=slider_config_longitude)
 
-        SliderGenerator.create_slider(
-            layout=controls_layout,
+        slider_config_fov = SliderConfig(
             row=2,
             label_text="Зум (%):",
-            min_value=10,
-            max_value=90,
-            initial_value=45,
+            min_value=FOV_RANGE[0],
+            max_value=FOV_RANGE[1],
+            initial_value=INITIAL_FOV,
             tick_interval=5,
             update_label_function=lambda value: f"{value}%",
             callback_function=self.sky_widget.update_zoom
         )
+        SliderGenerator.create_slider(layout=controls_layout,
+                                      config=slider_config_fov)
 
-        _, self.head_latitude_slider, _ = SliderGenerator.create_slider(
-            layout=controls_layout,
+        slider_config_head_latitude = SliderConfig(
             row=3,
             label_text="Наклон головы вверх/вниз (°):",
-            min_value=-90,
-            max_value=90,
-            initial_value=0,
+            min_value=HEAD_LATITUDE_RANGE[0],
+            max_value=HEAD_LATITUDE_RANGE[1],
+            initial_value=INITIAL_HEAD_LATITUDE,
             tick_interval=10,
             update_label_function=lambda value: f"{value}°",
             callback_function=self.sky_widget.set_head_latitude
         )
+        _, self.head_latitude_slider, _ = SliderGenerator.create_slider(
+            layout=controls_layout, config=slider_config_head_latitude)
 
-        _, self.head_longitude_slider, _ = SliderGenerator.create_slider(
-            layout=controls_layout,
+        slider_config_head_longitude = SliderConfig(
             row=4,
             label_text="Наклон головы влево/вправо (°):",
-            min_value=-180,
-            max_value=180,
-            initial_value=0,
+            min_value=HEAD_LONGITUDE_RANGE[0],
+            max_value=HEAD_LONGITUDE_RANGE[1],
+            initial_value=INITIAL_HEAD_LONGITUDE,
             tick_interval=30,
             update_label_function=lambda value: f"{value}°",
             callback_function=self.sky_widget.set_head_longitude
         )
+        _, self.head_longitude_slider, _ = SliderGenerator.create_slider(
+            layout=controls_layout, config=slider_config_head_longitude)
 
-    def update_head_latitude_slider(self, value):
+    def update_head_latitude_slider(self, value: float):
+        """
+        Обновляет слайдер наклона головы вверх/вниз.
+
+        :param value: Новое значение наклона.
+        """
         self.head_latitude_slider.blockSignals(True)
         self.head_latitude_slider.setValue(int(value))
         self.head_latitude_slider.blockSignals(False)
 
-    def update_head_longitude_slider(self, value):
+    def update_head_longitude_slider(self, value: float):
+        """
+        Обновляет слайдер наклона головы влево/вправо.
+
+        :param value: Новое значение наклона.
+        """
         self.head_longitude_slider.blockSignals(True)
         self.head_longitude_slider.setValue(int(value))
         self.head_longitude_slider.blockSignals(False)
 
     def change_date(self):
+        """
+        Открывает диалог для изменения даты.
+        """
         current_date_text = self.time_label.text().split(": ")[1]
-        date_dialog = QDialog(self)
-        date_dialog.setWindowTitle("Укажите новую дату")
-        layout = QVBoxLayout()
-        date_dialog.setLayout(layout)
+        date_dialog = DateChangeDialog(current_time=current_date_text,
+                                       parent=self)
 
-        date_input = QLineEdit()
-        date_input.setText(current_date_text)
-        layout.addWidget(date_input)
+        if date_dialog.exec_() == QDialog.Accepted:
+            new_date_text = date_dialog.get_new_time()
+            self.set_new_date(new_date_text)
 
-        buttons_layout = QHBoxLayout()
-        layout.addLayout(buttons_layout)
+    def set_new_date(self, date_text: str):
+        """
+        Устанавливает новую дату, если формат верен.
 
-        ok_button = QPushButton("Ок")
-        cancel_button = QPushButton("Отмена")
-        buttons_layout.addWidget(ok_button)
-        buttons_layout.addWidget(cancel_button)
-
-        ok_button.clicked.connect(lambda: self.set_new_date(date_dialog, date_input.text()))
-        cancel_button.clicked.connect(date_dialog.reject)
-
-        date_dialog.exec_()
-
-    def set_new_date(self, dialog, date_text):
-
+        :param date_text: Новая дата в строковом формате.
+        """
         try:
-            new_date = datetime.strptime(date_text, "%Y/%m/%d/%H/%M")
+            new_date = datetime.strptime(date_text, DATE_FORMAT)
             self.sky_widget.update_date(new_date)
             self.time_label.setText(f"Время: {date_text}")
-
-            dialog.accept()
         except ValueError:
-            QMessageBox.warning(self, "Ошибка", "Неверный формат даты. Используйте YYYY/MM/DD/HH/MM.")
+            QMessageBox.warning(self, "Ошибка",
+                                "Неверный формат даты. Используйте YYYY/MM/DD/HH/MM.")

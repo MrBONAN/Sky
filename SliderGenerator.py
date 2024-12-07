@@ -1,44 +1,38 @@
 from PyQt5.QtWidgets import QLabel, QSlider, QGridLayout
-from PyQt5.QtCore import Qt
-from typing import Callable
+from SliderConfig import SliderConfig
 
 
 class SliderGenerator:
     @classmethod
-    def create_slider(cls,
-                      layout: QGridLayout,
-                      row: int,
-                      label_text: str,
-                      min_value: int,
-                      max_value: int,
-                      initial_value: int,
-                      tick_interval: int,
-                      callback_function: Callable[[int], None],
-                      update_label_function: Callable[[int], str],
-                      orientation=Qt.Horizontal
-                      ) -> tuple[QLabel, QSlider, QLabel]:
-        label = QLabel(label_text)
+    def create_slider(cls, layout: QGridLayout, config: SliderConfig) -> tuple[
+        QLabel, QSlider, QLabel]:
+        """
+        Создаёт и настраивает слайдер с меткой и отображением значения.
 
-        slider = QSlider(orientation)
-        slider.setMinimum(min_value)
-        slider.setMaximum(max_value)
-        slider.setValue(initial_value)
-        slider.setTickInterval(tick_interval)
+        :param layout: Сетка для размещения слайдера.
+        :param config: Конфигурация слайдера.
+        :return: Кортеж из метки, слайдера и метки значения.
+        """
+        label = QLabel(config.label_text)
+
+        slider = QSlider(config.orientation)
+        slider.setMinimum(config.min_value)
+        slider.setMaximum(config.max_value)
+        slider.setValue(config.initial_value)
+        slider.setTickInterval(config.tick_interval)
         slider.setTickPosition(QSlider.TicksBelow)
-        slider.valueChanged.connect(callback_function)
+        slider.valueChanged.connect(config.callback_function)
 
         value_label = QLabel()
 
         def wrapped_update_value_label(value):
-            value_label.setText(update_label_function(value))
+            value_label.setText(config.update_label_function(value))
 
-        wrapped_update_value_label(initial_value)
-        slider.valueChanged.connect(lambda value: wrapped_update_value_label(value))
+        wrapped_update_value_label(config.initial_value)
+        slider.valueChanged.connect(wrapped_update_value_label)
 
-        layout.addWidget(label, row, 0)
-        layout.addWidget(slider, row, 1)
-        layout.addWidget(value_label, row, 2)
+        layout.addWidget(label, config.row, 0)
+        layout.addWidget(slider, config.row, 1)
+        layout.addWidget(value_label, config.row, 2)
 
         return label, slider, value_label
-
-

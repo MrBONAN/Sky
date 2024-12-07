@@ -1,9 +1,16 @@
+from datetime import datetime
+
 from PyQt5.QtWidgets import (
-    QDialog, QVBoxLayout, QHBoxLayout, QLabel, QLineEdit, QPushButton, QMessageBox
+    QDialog, QVBoxLayout, QHBoxLayout, QLabel, QLineEdit, QPushButton,
+    QMessageBox
 )
 
 
 class DateChangeDialog(QDialog):
+    """
+    Диалог для изменения даты.
+    """
+
     def __init__(self, current_time: str, parent=None):
         super(DateChangeDialog, self).__init__(parent)
         self.setWindowTitle("Укажите новую дату")
@@ -33,30 +40,33 @@ class DateChangeDialog(QDialog):
         buttons_layout.addWidget(cancel_button)
 
     def get_new_time(self) -> str:
+        """
+        Возвращает введённую пользователем новую дату.
+
+        :return: Строка с новой датой.
+        """
         return self.time_input.text()
 
     def accept(self):
+        """
+        Переопределённый метод accept с валидацией формата даты.
+        """
         if self.validate_time_format(self.time_input.text()):
             super().accept()
         else:
-            QMessageBox.warning(self, "Неверный формат", "Пожалуйста, введите дату в формате YYYY/MM/DD/HH/MM.")
+            QMessageBox.warning(self, "Неверный формат",
+                                "Пожалуйста, введите дату в формате YYYY/MM/DD/HH/MM.")
 
     @staticmethod
     def validate_time_format(time_str: str) -> bool:
-        """Проверяет, соответствует ли строка формату YYYY/MM/DD/HH/MM."""
+        """
+        Проверяет, соответствует ли строка формату YYYY/MM/DD/HH/MM.
+
+        :param time_str: Строка даты.
+        :return: True, если формат верный, иначе False.
+        """
         try:
-            parts = time_str.split('/')
-            if len(parts) != 5:
-                return False
-            year, month, day, hour, minute = map(int, parts)
-            if not (1 <= month <= 12):
-                return False
-            if not (1 <= day <= 31):
-                return False
-            if not (0 <= hour < 24):
-                return False
-            if not (0 <= minute < 60):
-                return False
+            datetime.strptime(time_str, "%Y/%m/%d/%H/%M")
             return True
         except ValueError:
             return False

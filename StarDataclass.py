@@ -3,38 +3,41 @@ from math import asin, atan2
 
 
 @dataclass
-class Star:
-    _location_vec: 'Vector'
-    _magnitude: float
-    _spectral_class: str
-
-    def get_vector(self) -> 'Vector':
-        return self._location_vec
-
-    def get_angles(self) -> tuple[float, float]:
-        x, y, z = self._location_vec
-        right_ascension = atan2(y, x)
-        declination = asin(z)
-        return right_ascension, declination
-
-    def get_magnitude(self):
-        return self._magnitude
-
-    def get_spectral_class(self):
-        return self._spectral_class
-
-
-@dataclass
 class Vector:
     """
-    params: x
-    params: y
-    params: z
+    Вектор в 3D пространстве.
     """
     x: float
     y: float
     z: float
 
+    def extract_coords(self) -> tuple[float, float, float]:
+        return self.x, self.y, self.z
 
-    def extract_coords(self):
-        return self.x,self.y,self.z
+
+@dataclass
+class Star:
+    """
+    Звезда с вектором положения, магнитудой и спектральным классом.
+    """
+    location_vec: Vector
+    magnitude: float
+    spectral_class: str
+
+    def get_vector(self) -> Vector:
+        return self.location_vec
+
+    def get_angles(self) -> tuple[float, float]:
+        """
+        Возвращает прямое восхождение и склонение.
+        """
+        x, y, z = self.location_vec.extract_coords()
+        right_ascension = atan2(y, x)
+        declination = asin(z)
+        return right_ascension, declination
+
+    def get_magnitude(self) -> float:
+        return self.magnitude
+
+    def get_spectral_class(self) -> str:
+        return self.spectral_class
