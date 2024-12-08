@@ -1,5 +1,5 @@
 from dbfread import DBF
-from StarDataclass import Star, Vector
+from star_dataclass import Star, Vector
 from datetime import timedelta
 from math import radians, degrees, cos, sin, atan2, asin, pi
 

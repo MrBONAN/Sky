@@ -3,10 +3,10 @@ from PyQt5.QtWidgets import (
     QPushButton, QMessageBox, QDialog
 )
 
-from SliderGenerator import SliderGenerator
-from SliderConfig import SliderConfig
-from SkyWidget import SkyWidget
-from DateChangeDialog import DateChangeDialog
+from slider_generator import SliderGenerator
+from slider_config import SliderConfig
+from sky_widget import SkyWidget
+from date_change_dialog_handler import DateChangeDialog
 from settings import (
     INITIAL_LATITUDE, INITIAL_LONGITUDE, INITIAL_FOV,
     LATITUDE_RANGE, LONGITUDE_RANGE, FOV_RANGE,

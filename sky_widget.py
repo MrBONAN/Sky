@@ -7,8 +7,8 @@ from PyQt5.QtOpenGL import QGLWidget
 from OpenGL.GL import *
 from OpenGL.GLU import *
 
-from StarDataclass import Star, Vector
-from StarParser import StarParser, StarPositionUpdater
+from star_dataclass import Star, Vector
+from star_parser import StarParser, StarPositionUpdater
 from settings import DATE_FORMAT
 
 

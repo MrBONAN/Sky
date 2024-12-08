@@ -1,5 +1,5 @@
 from PyQt5.QtWidgets import QLabel, QSlider, QGridLayout
-from SliderConfig import SliderConfig
+from slider_config import SliderConfig
 
 
 class SliderGenerator:

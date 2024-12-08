@@ -1,5 +1,5 @@
 import unittest
-from StarParser import StarParser
+from star_parser import StarParser
 
 
 class StarParserTests(unittest.TestCase):
