@@ -17,15 +17,7 @@ from settings import (
 from datetime import datetime
 
 
-class AngleConfig:
-    """
-    Конфигурация для угловых параметров.
-    """
 
-    def __init__(self, value: float, min_value: float, max_value: float):
-        self.value = value
-        self.min_value = min_value
-        self.max_value = max_value
 
 
 class MainWindow(QMainWindow):

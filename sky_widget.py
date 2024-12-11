@@ -9,18 +9,8 @@ from OpenGL.GLU import *
 
 from star_dataclass import Star, Vector
 from star_parser import StarParser, StarPositionUpdater
-from settings import DATE_FORMAT
+from settings import DATE_FORMAT,AngleConfig
 
-
-class AngleConfig:
-    """
-    Конфигурация угловых параметров.
-    """
-
-    def __init__(self, value: float, min_value: float, max_value: float):
-        self.value = value
-        self.min_value = min_value
-        self.max_value = max_value
 
 
 class SkyWidget(QGLWidget):
@@ -154,17 +144,17 @@ class SkyWidget(QGLWidget):
         for longitude in range(len(sphere_grid[0])):
             glBegin(GL_LINE_STRIP)
             for latitude in sphere_grid:
-                coord_x, coord_y, coord_z = latitude[
-                    longitude].extract_coords()
-                glVertex3f(coord_x, coord_y, coord_z)
+                vector = latitude[
+                    longitude]
+                glVertex3f(*vector)
             glEnd()
 
         for latitude in sphere_grid:
             glBegin(GL_LINE_LOOP)
             for longitude in range(len(latitude)):
-                coord_x, coord_y, coord_z = latitude[
-                    longitude].extract_coords()
-                glVertex3f(coord_x, coord_y, coord_z)
+                vector = latitude[
+                    longitude]
+                glVertex3f(*vector)
             glEnd()
 
     def _draw_ground(self):
@@ -218,8 +208,8 @@ class SkyWidget(QGLWidget):
             glPointSize(scaled_size)
             glBegin(GL_POINTS)
             for current_star in stars:
-                coord_x, coord_y, coord_z = current_star.get_vector().extract_coords()
-                glVertex3f(coord_x, coord_y, coord_z)
+               vector = current_star.get_vector()
+               glVertex3f(*vector)
             glEnd()
 
     @staticmethod

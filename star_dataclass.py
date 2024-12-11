@@ -1,9 +1,9 @@
 from dataclasses import dataclass
 from math import asin, atan2
+from typing import NamedTuple
 
 
-@dataclass
-class Vector:
+class Vector(NamedTuple):
     """
     Вектор в 3D пространстве.
     """
@@ -31,7 +31,8 @@ class Star:
         """
         Возвращает прямое восхождение и склонение.
         """
-        x, y, z = self.location_vec.extract_coords()
+        vector = self.location_vec
+        x,y,z = vector.extract_coords()
         right_ascension = atan2(y, x)
         declination = asin(z)
         return right_ascension, declination

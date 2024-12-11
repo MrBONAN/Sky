@@ -35,4 +35,5 @@ class SliderGenerator:
         layout.addWidget(slider, config.row, 1)
         layout.addWidget(value_label, config.row, 2)
 
+        #оно так работает, особенности PyQT
         return label, slider, value_label
