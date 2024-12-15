@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 
-DATE_FORMAT = "%Y/%m/%d/%H/%M"
+DATE_FORMAT = "%Y/%m/%d %H:%M"
 
 INITIAL_LATITUDE = 57
 INITIAL_LONGITUDE = 61
