@@ -1,6 +1,6 @@
 from PyQt5.QtWidgets import (
     QMainWindow, QWidget, QVBoxLayout, QGridLayout, QHBoxLayout, QLabel,
-    QPushButton, QMessageBox, QDialog
+    QPushButton, QMessageBox, QDialog, QDoubleSpinBox
 )
 
 from slider_generator import SliderGenerator
@@ -15,9 +15,6 @@ from settings import (
     DATE_FORMAT
 )
 from datetime import datetime
-
-
-
 
 
 class MainWindow(QMainWindow):
@@ -54,6 +51,29 @@ class MainWindow(QMainWindow):
         main_layout.addLayout(controls_layout)
         self.add_sliders(controls_layout)
 
+        magnitude_layout = QHBoxLayout()
+        min_mag_label = QLabel("Мин. звёздная величина:")
+        self.min_mag_spin = QDoubleSpinBox()
+        self.min_mag_spin.setRange(-1.0, 6.0)
+        self.min_mag_spin.setValue(-0.1)
+        self.min_mag_spin.setSingleStep(0.1)
+        self.min_mag_spin.valueChanged.connect(self.update_magnitude_range)
+
+        magnitude_layout.addWidget(min_mag_label)
+        magnitude_layout.addWidget(self.min_mag_spin)
+
+        max_mag_label = QLabel("Макс. звёздная величина:")
+        self.max_mag_spin = QDoubleSpinBox()
+        self.max_mag_spin.setRange(1.0, 7.0)
+        self.max_mag_spin.setValue(6.0)
+        self.max_mag_spin.setSingleStep(0.1)
+        self.max_mag_spin.valueChanged.connect(self.update_magnitude_range)
+
+        magnitude_layout.addWidget(max_mag_label)
+        magnitude_layout.addWidget(self.max_mag_spin)
+
+        main_layout.addLayout(magnitude_layout)
+
         self.sky_widget.headLatitudeChanged.connect(
             self.update_head_latitude_slider)
         self.sky_widget.headLongitudeChanged.connect(
@@ -62,8 +82,6 @@ class MainWindow(QMainWindow):
     def add_sliders(self, controls_layout: QGridLayout) -> None:
         """
         Добавляет слайдеры в интерфейс.
-
-        :param controls_layout: Сетка для размещения слайдеров.
         """
         slider_config_latitude = SliderConfig(
             row=0,
@@ -130,30 +148,31 @@ class MainWindow(QMainWindow):
         _, self.head_longitude_slider, _ = SliderGenerator.create_slider(
             layout=controls_layout, config=slider_config_head_longitude)
 
-    def update_head_latitude_slider(self, value: float):
+    def update_magnitude_range(self):
         """
-        Обновляет слайдер наклона головы вверх/вниз.
+        Обновляет интервал видимой звёздной величины в sky_widget.
+        """
+        min_mag = self.min_mag_spin.value()
+        max_mag = self.max_mag_spin.value()
 
-        :param value: Новое значение наклона.
-        """
+        if min_mag > max_mag:
+            QMessageBox.warning(self, "Неверный диапазон",
+                                "Минимальная величина должна быть меньше максимальной.")
+            return
+
+        self.sky_widget.set_magnitude_range(min_mag, max_mag)
+
+    def update_head_latitude_slider(self, value: float):
         self.head_latitude_slider.blockSignals(True)
         self.head_latitude_slider.setValue(int(value))
         self.head_latitude_slider.blockSignals(False)
 
     def update_head_longitude_slider(self, value: float):
-        """
-        Обновляет слайдер наклона головы влево/вправо.
-
-        :param value: Новое значение наклона.
-        """
         self.head_longitude_slider.blockSignals(True)
         self.head_longitude_slider.setValue(int(value))
         self.head_longitude_slider.blockSignals(False)
 
     def change_date(self):
-        """
-        Открывает диалог для изменения даты.
-        """
         current_date_text = self.time_label.text().split(": ")[1]
         date_dialog = DateChangeDialog(current_time=current_date_text,
                                        parent=self)
@@ -163,11 +182,6 @@ class MainWindow(QMainWindow):
             self.set_new_date(new_date_text)
 
     def set_new_date(self, date_text: str):
-        """
-        Устанавливает новую дату, если формат верен.
-
-        :param date_text: Новая дата в строковом формате.
-        """
         try:
             new_date = datetime.strptime(date_text, DATE_FORMAT)
             self.sky_widget.update_date(new_date)
