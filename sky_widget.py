@@ -159,7 +159,6 @@ class SkyWidget(QGLWidget):
             self.renderText(x, y, z, label, self.direction_font)
 
     def _draw_stars(self):
-        min_mag = 0.0
         max_mag = 6.0
         min_rad = 1.0
         k = 0.4
@@ -181,7 +180,7 @@ class SkyWidget(QGLWidget):
 
             main_class = None
             for c in spectral_class:
-                if c in "OBAFGKM":
+                if c in spectral_colors.keys():
                     main_class = c
                     break
 
